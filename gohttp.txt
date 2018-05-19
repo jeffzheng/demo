@@ -1,0 +1,35 @@
+echo "创建私钥"
+openssl genrsa -out ca.key 2048
+
+echo "根据私钥创建根证书"
+openssl req -new -x509 -days 36500 -key ca.key -out ca.crt -subj "/C=CN/ST=Guangdong/L=Shenzhen/O=Aokao Technology Ltd/OU=Aokao Root CA"
+
+echo "创建SSL证书私钥"
+openssl genrsa -out server.key 2048
+
+echo "根据server私钥创建SSL证书"
+openssl req -new -key server.key -out server.csr -subj "/C=CN/ST=Guangdong/L=Shenzhen/O=Aokao Technology Ltd/OU=192.168.1.125/CN=192.168.1.125"
+
+server {
+    listen       80;
+    server_name  Walden.dev;
+    root /the/dir/of/Walden;
+    index index.php;
+
+    # 建议放内网做文档服务
+    #allow 192.168.0.0/24;
+    #deny all;
+
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+}
+
+./configure --prefix=/usr/local/php  --with-apxs2=/usr/local/apache2/bin/apxs --with-config-file-path=/usr/local/php/etc
